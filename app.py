@@ -61,7 +61,7 @@ if uploaded_file is not None and api_key:
         st.subheader("📊 Visualizations")
         
         numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+        categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
 
 # BAR CHART - TOP 10 ONLY
 if categorical_cols and numeric_cols:
@@ -88,7 +88,7 @@ if categorical_cols:
     df_top5 = df.nlargest(5, numeric_cols[0]) if numeric_cols else df.head(5)
     fig_pie = px.pie(df_top5, names=categorical_cols[0], title=f"Top 5: {categorical_cols[0]}")
     st.plotly_chart(fig_pie, use_container_width=True)
-    
+
     with tab3:
         st.subheader("📋 AI-Generated Recommendations")
         
