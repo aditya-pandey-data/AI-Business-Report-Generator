@@ -61,22 +61,33 @@ if uploaded_file is not None and api_key:
         st.subheader("📊 Visualizations")
         
         numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-        categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+
+# BAR CHART - TOP 10 ONLY
+if categorical_cols and numeric_cols:
+    st.subheader("Bar Chart (Top 10)")
+    df_top = df.nlargest(10, numeric_cols[0])
+    fig_bar = px.bar(df_top, x=categorical_cols[0], y=numeric_cols[0], title=f"Top 10: {categorical_cols[0]}")
+    st.plotly_chart(fig_bar, use_container_width=True)
+
         
-        if categorical_cols and numeric_cols:
-            st.subheader("Bar Chart")
-            fig_bar = px.bar(df, x=categorical_cols[0], y=numeric_cols[0], title=f"{categorical_cols[0]} vs {numeric_cols[0]}")
-            st.plotly_chart(fig_bar, use_container_width=True)
+        # LINE CHART - GROUPED BY MONTH
+if 'Date' in df.columns and numeric_cols:
+    st.subheader("Line Chart (By Month)")
+    df_copy = df.copy()
+    df_copy['Date'] = pd.to_datetime(df_copy['Date'])
+    df_copy['YearMonth'] = df_copy['Date'].dt.strftime('%Y-%m')
+    df_monthly = df_copy.groupby('YearMonth')[numeric_cols[0]].sum().reset_index()
+    fig_line = px.line(df_monthly, x='YearMonth', y=numeric_cols[0], title=f"Monthly Trend")
+    st.plotly_chart(fig_line, use_container_width=True)
+
         
-        if 'Date' in df.columns and numeric_cols:
-            st.subheader("Line Chart")
-            fig_line = px.line(df, x='Date', y=numeric_cols[0], title=f"Trend over time")
-            st.plotly_chart(fig_line, use_container_width=True)
-        
-        if categorical_cols:
-            st.subheader("Pie Chart")
-            fig_pie = px.pie(df, names=categorical_cols[0], title=f"Distribution of {categorical_cols[0]}")
-            st.plotly_chart(fig_pie, use_container_width=True)
+    # PIE CHART - TOP 5 ONLY
+if categorical_cols:
+    st.subheader("Pie Chart (Top 5)")
+    df_top5 = df.nlargest(5, numeric_cols[0]) if numeric_cols else df.head(5)
+    fig_pie = px.pie(df_top5, names=categorical_cols[0], title=f"Top 5: {categorical_cols[0]}")
+    st.plotly_chart(fig_pie, use_container_width=True)
     
     with tab3:
         st.subheader("📋 AI-Generated Recommendations")
