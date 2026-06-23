@@ -62,39 +62,36 @@ if uploaded_file is not None and api_key:
         
         numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
         categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
-
-# BAR CHART - TOP 10 ONLY
-if categorical_cols and numeric_cols:
-    st.subheader("Bar Chart (Top 10)")
-    df_top = df.nlargest(10, numeric_cols[0])
-    fig_bar = px.bar(df_top, x=categorical_cols[0], y=numeric_cols[0], title=f"Top 10: {categorical_cols[0]}")
-    st.plotly_chart(fig_bar, use_container_width=True)
-
+        
+        # BAR CHART - TOP 10 ONLY
+        if categorical_cols and numeric_cols:
+            st.subheader("Bar Chart (Top 10)")
+            df_top = df.nlargest(10, numeric_cols[0])
+            fig_bar = px.bar(df_top, x=categorical_cols[0], y=numeric_cols[0], title=f"Top 10: {categorical_cols[0]}")
+            st.plotly_chart(fig_bar, use_container_width=True)
         
         # LINE CHART - GROUPED BY MONTH
-if 'Date' in df.columns and numeric_cols:
-    st.subheader("Line Chart (By Month)")
-    df_copy = df.copy()
-    df_copy['Date'] = pd.to_datetime(df_copy['Date'])
-    df_copy['YearMonth'] = df_copy['Date'].dt.strftime('%Y-%m')
-    df_monthly = df_copy.groupby('YearMonth')[numeric_cols[0]].sum().reset_index()
-    fig_line = px.line(df_monthly, x='YearMonth', y=numeric_cols[0], title=f"Monthly Trend")
-    st.plotly_chart(fig_line, use_container_width=True)
-
+        if 'Date' in df.columns and numeric_cols:
+            st.subheader("Line Chart (By Month)")
+            df_copy = df.copy()
+            df_copy['Date'] = pd.to_datetime(df_copy['Date'])
+            df_copy['YearMonth'] = df_copy['Date'].dt.strftime('%Y-%m')
+            df_monthly = df_copy.groupby('YearMonth')[numeric_cols[0]].sum().reset_index()
+            fig_line = px.line(df_monthly, x='YearMonth', y=numeric_cols[0], title=f"Monthly Trend")
+            st.plotly_chart(fig_line, use_container_width=True)
         
-    # PIE CHART - TOP 5 ONLY
-if categorical_cols:
-    st.subheader("Pie Chart (Top 5)")
-    df_top5 = df.nlargest(5, numeric_cols[0]) if numeric_cols else df.head(5)
-    fig_pie = px.pie(df_top5, names=categorical_cols[0], title=f"Top 5: {categorical_cols[0]}")
-    st.plotly_chart(fig_pie, use_container_width=True)
-
+        # PIE CHART - TOP 5 ONLY
+        if categorical_cols:
+            st.subheader("Pie Chart (Top 5)")
+            df_top5 = df.nlargest(5, numeric_cols[0]) if numeric_cols else df.head(5)
+            fig_pie = px.pie(df_top5, names=categorical_cols[0], title=f"Top 5: {categorical_cols[0]}")
+            st.plotly_chart(fig_pie, use_container_width=True)
+    
     with tab3:
         st.subheader("📋 AI-Generated Recommendations")
         
         if st.button("Generate AI Insights"):
             with st.spinner("🤖 Analyzing data..."):
-                # PANDAS ANALYSIS
                 numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
                 
                 analysis = {
@@ -109,7 +106,6 @@ if categorical_cols:
                         analysis[f"{col} - Max"] = round(df[col].max(), 2)
                         analysis[f"{col} - Min"] = round(df[col].min(), 2)
                 
-                # PREPARE PROMPT WITH METRICS
                 metrics_text = "\n".join([f"- {k}: {v}" for k, v in analysis.items()])
                 
                 data_description = f"""
@@ -120,7 +116,6 @@ if categorical_cols:
                 {df.head(3).to_string()}
                 """
                 
-                # CALL AI
                 client = Groq(api_key=api_key)
                 
                 response = client.chat.completions.create(
@@ -171,7 +166,6 @@ if categorical_cols:
                     pdf.cell(0, 8, f"{col}: {df[col].dtype}", ln=True)
                 pdf.ln(5)
                 
-                # ADD ANALYSIS METRICS
                 if 'analysis' in st.session_state:
                     pdf.set_font("Arial", "B", 12)
                     pdf.cell(0, 10, "Analysis Metrics", ln=True)
@@ -181,7 +175,6 @@ if categorical_cols:
                         pdf.cell(0, 8, f"{key}: {value}", ln=True)
                     pdf.ln(5)
                 
-                # ADD AI INSIGHTS
                 if 'ai_response' in st.session_state:
                     pdf.set_font("Arial", "B", 14)
                     pdf.cell(0, 10, "AI Analysis", ln=True)
