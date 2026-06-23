@@ -1,5 +1,5 @@
-streamlit==1.40.1
-pandas==2.2.1
-groq==0.9.0
-plotly==5.24.1
-fpdf2==2.8.1
+streamlit
+pandas
+groq
+plotly
+fpdf2
