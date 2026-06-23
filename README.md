@@ -3,13 +3,13 @@
 🚀 **[Click here to use the app live!](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)**
 ---
 
+An AI-powered web application that analyzes CSV datasets and generates professional business reports automatically.
+---
+
 ## 📸 App Demo
 
 ![App Demo](app-demo.png)
-
 ---
-
-An AI-powered web application that analyzes CSV datasets and generates professional business reports automatically.
 
 ## Features
 
