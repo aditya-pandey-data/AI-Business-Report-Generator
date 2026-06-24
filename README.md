@@ -3,7 +3,6 @@
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-red.svg)](https://streamlit.io)
 [![SQLite](https://img.shields.io/badge/SQLite-3+-003B57.svg)](https://www.sqlite.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 🚀 **[Click here to use the live app!](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)**
 
@@ -308,31 +307,6 @@ This project demonstrates:
 - ✅ Automated workflows
 - ✅ User experience design
 - ✅ Production-ready code
-
----
-
-## 🚀 Future Improvements
-
-- [ ] Google Sheets integration
-- [ ] Advanced forecasting models (ARIMA, Prophet)
-- [ ] Custom SQL query builder UI
-- [ ] Tableau/Power BI export
-- [ ] Real-time data refresh
-- [ ] User authentication & multi-user support
-- [ ] Data quality scorecards
-- [ ] Anomaly detection with ML
-- [ ] Export to Excel with formatting
-
----
-
-## 🤝 Contributing
-
-Contributions welcome! Areas:
-- Bug fixes and improvements
-- New visualization types
-- Database connectors
-- Performance optimizations
-- Documentation improvements
 
 ---
 
