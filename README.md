@@ -2,6 +2,7 @@
 
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-red.svg)](https://streamlit.io)
+[![SQLite](https://img.shields.io/badge/SQLite-3+-003B57.svg)](https://www.sqlite.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 🚀 **[Click here to use the live app!](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)**
@@ -48,7 +49,7 @@ An **AI-powered business analytics platform** that transforms raw datasets into 
 - **Column Profiling**: Data types, cardinality, null counts
 - **Outlier Detection**: Smart IQR-based outlier identification per column
 
-### 🗄️ Advanced SQL Analytics (Portfolio Strength)
+### 🗄️ Advanced SQL Analytics 
 
 Demonstrates mastery of enterprise SQL concepts:
 
