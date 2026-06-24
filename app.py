@@ -155,18 +155,23 @@ if has_data and api_key:
             if (df[col] < 0).sum() > 0 and col.lower() not in ['change', 'variance', 'delta']:
                 quality_issues.append(f"⚠️ **Column '{col}' has negative values**")
         
-        outlier_count = 0
-        outlier_cols = []
+        # IMPROVED OUTLIER DETECTION using IQR method
+        outlier_rows = set()
         for col in numeric_cols:
-            mean = df[col].mean()
-            std = df[col].std()
-            outliers = len(df[(df[col] > mean + 3*std) | (df[col] < mean - 3*std)])
-            if outliers > 0:
-                outlier_count += outliers
-                outlier_cols.append(col)
+            Q1 = df[col].quantile(0.25)
+            Q3 = df[col].quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - 1.5 * IQR
+            upper_bound = Q3 + 1.5 * IQR
+            
+            outlier_indices = df[(df[col] < lower_bound) | (df[col] > upper_bound)].index
+            outlier_rows.update(outlier_indices)
         
-        if outlier_count > 0:
-            quality_issues.append(f"📊 **{outlier_count} outliers detected**")
+        if len(outlier_rows) > 0:
+            outlier_percentage = (len(outlier_rows) / len(df) * 100)
+            quality_issues.append(
+                f"📊 **{len(outlier_rows)} rows ({outlier_percentage:.1f}%) have outliers** detected using IQR method"
+            )
         
         if len(quality_issues) == 0:
             st.success("✅ Data quality looks good!")
@@ -193,30 +198,30 @@ if has_data and api_key:
         
         with col1:
             if has_numeric and has_categorical:
-                st.success("✅ Query 1: Ranking Analysis")
+                st.success("✅ Query 1: Ranking")
             else:
-                st.error("❌ Query 1 requires numeric + categorical columns")
+                st.error("❌ Query 1 requires numeric + categorical")
         
         with col2:
             if has_numeric:
                 st.success("✅ Query 2: Segmentation")
             else:
-                st.error("❌ Query 2 requires numeric columns")
+                st.error("❌ Query 2 requires numeric")
         
         with col3:
             if has_date and has_numeric:
-                st.success("✅ Query 3: Trend Analysis")
+                st.success("✅ Query 3: Trends")
             else:
                 if not has_date:
-                    st.warning("⚠️ Query 3 requires Date column")
+                    st.warning("⚠️ Query 3 needs Date")
                 if not has_numeric:
-                    st.warning("⚠️ Query 3 requires numeric columns")
+                    st.warning("⚠️ Query 3 needs numeric")
         
         st.divider()
         
-        # QUERY 1: RANKING (if available)
+        # QUERY 1: ROW_NUMBER (instead of RANK)
         if has_numeric and has_categorical:
-            st.subheader("Query 1: Ranking Analysis (Window Function)")
+            st.subheader("Query 1: Ranking Analysis (ROW_NUMBER)")
             
             sql_query1 = f"""
             SELECT 
@@ -224,7 +229,7 @@ if has_data and api_key:
                 SUM(CAST("{numeric_cols[0]}" AS FLOAT)) as total_value,
                 AVG(CAST("{numeric_cols[0]}" AS FLOAT)) as avg_value,
                 COUNT(*) as count,
-                RANK() OVER (ORDER BY SUM(CAST("{numeric_cols[0]}" AS FLOAT)) DESC) as rank,
+                ROW_NUMBER() OVER (ORDER BY SUM(CAST("{numeric_cols[0]}" AS FLOAT)) DESC) as rank,
                 ROUND(100.0 * SUM(CAST("{numeric_cols[0]}" AS FLOAT)) / 
                     (SELECT SUM(CAST("{numeric_cols[0]}" AS FLOAT)) FROM data), 2) as percentage_of_total
             FROM data
@@ -242,19 +247,17 @@ if has_data and api_key:
                 st.dataframe(result1, use_container_width=True)
                 st.session_state.sql_result1 = result1
                 
-                st.success("✅ This shows the top categories by value, ranked with percentage of total")
+                st.success("✅ Top categories ranked without gaps (using ROW_NUMBER)")
             except Exception as e:
                 st.error(f"❌ Query error: {str(e)}")
         
         else:
             st.info("⚠️ **Query 1 Not Available**")
-            st.write(f"This query needs:")
-            st.write(f"- Numeric column: {has_numeric} (found: {', '.join(numeric_cols) if numeric_cols else 'None'})")
-            st.write(f"- Categorical column: {has_categorical} (found: {', '.join(categorical_cols) if categorical_cols else 'None'})")
+            st.write(f"Needs: Numeric ({has_numeric}) + Categorical ({has_categorical})")
         
         st.divider()
         
-        # QUERY 2: SEGMENTATION (if available)
+        # QUERY 2: SEGMENTATION
         if has_numeric:
             st.subheader("Query 2: Customer Segmentation (CTE)")
             
@@ -297,19 +300,18 @@ if has_data and api_key:
                 st.dataframe(result2, use_container_width=True)
                 st.session_state.sql_result2 = result2
                 
-                st.success("✅ This segments your data into High vs Low performers based on average value")
+                st.success("✅ Data segmented into High vs Low performers")
             except Exception as e:
                 st.error(f"❌ Query error: {str(e)}")
         
         else:
-            st.info("⚠️ **Query 2 Not Available**")
-            st.write("This query needs: Numeric column (not found in your data)")
+            st.info("⚠️ **Query 2 Not Available** - Requires numeric columns")
         
         st.divider()
         
-        # QUERY 3: TREND ANALYSIS (if available)
+        # QUERY 3: TREND ANALYSIS
         if has_date and has_numeric:
-            st.subheader("Query 3: Trend Analysis (LAG Window Function)")
+            st.subheader("Query 3: Trend Analysis (LAG)")
             
             sql_query3 = f"""
             SELECT 
@@ -335,15 +337,13 @@ if has_data and api_key:
                 st.dataframe(result3, use_container_width=True)
                 st.session_state.sql_result3 = result3
                 
-                st.success("✅ This shows trends over time with period-over-period change")
+                st.success("✅ Trend analysis with period-over-period changes")
             except Exception as e:
                 st.error(f"❌ Query error: {str(e)}")
         
         else:
             st.info("⚠️ **Query 3 Not Available**")
-            st.write("This query needs:")
-            st.write(f"- Date column: {has_date} (found: {date_col if date_col else 'None'})")
-            st.write(f"- Numeric column: {has_numeric} (found: {', '.join(numeric_cols) if numeric_cols else 'None'})")
+            st.write(f"Needs: Date ({has_date}) + Numeric ({has_numeric})")
     
     # ==================== TAB 3: STATISTICAL ANALYSIS ====================
     with tab3:
