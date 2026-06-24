@@ -155,24 +155,49 @@ if has_data and api_key:
             if (df[col] < 0).sum() > 0 and col.lower() not in ['change', 'variance', 'delta']:
                 quality_issues.append(f"⚠️ **Column '{col}' has negative values**")
         
-        # IMPROVED OUTLIER DETECTION using IQR method
-        outlier_rows = set()
+        # ===== IMPROVED OUTLIER DETECTION - PER COLUMN =====
+        st.subheader("📊 Outlier Detection by Column")
+        
+        outlier_summary = []
+        total_outliers = 0
+        
         for col in numeric_cols:
             Q1 = df[col].quantile(0.25)
             Q3 = df[col].quantile(0.75)
             IQR = Q3 - Q1
-            lower_bound = Q1 - 1.5 * IQR
-            upper_bound = Q3 + 1.5 * IQR
             
-            outlier_indices = df[(df[col] < lower_bound) | (df[col] > upper_bound)].index
-            outlier_rows.update(outlier_indices)
+            # Only flag if IQR > 0 (avoid division by zero with zeros)
+            if IQR > 0:
+                lower_bound = Q1 - 1.5 * IQR
+                upper_bound = Q3 + 1.5 * IQR
+                outlier_count = len(df[(df[col] < lower_bound) | (df[col] > upper_bound)])
+                outlier_pct = (outlier_count / len(df) * 100)
+            else:
+                # If IQR = 0, only non-zero values are "outliers"
+                outlier_count = len(df[df[col] != df[col].mode()[0]]) if len(df[col].mode()) > 0 else 0
+                outlier_pct = (outlier_count / len(df) * 100)
+            
+            if outlier_count > 0:
+                outlier_summary.append({
+                    'Column': col,
+                    'Outliers': outlier_count,
+                    '% of Data': round(outlier_pct, 2),
+                    'Min': round(df[col].min(), 2),
+                    'Max': round(df[col].max(), 2),
+                    'Mean': round(df[col].mean(), 2)
+                })
+                total_outliers += outlier_count
         
-        if len(outlier_rows) > 0:
-            outlier_percentage = (len(outlier_rows) / len(df) * 100)
-            quality_issues.append(
-                f"📊 **{len(outlier_rows)} rows ({outlier_percentage:.1f}%) have outliers** detected using IQR method"
-            )
+        if outlier_summary:
+            outlier_df = pd.DataFrame(outlier_summary)
+            st.dataframe(outlier_df, use_container_width=True)
+            st.info(f"📊 Total outlier occurrences across all numeric columns: {total_outliers}")
+        else:
+            st.success("✅ No significant outliers detected")
         
+        st.divider()
+        
+        # Regular quality checks
         if len(quality_issues) == 0:
             st.success("✅ Data quality looks good!")
         else:
@@ -219,7 +244,7 @@ if has_data and api_key:
         
         st.divider()
         
-        # QUERY 1: ROW_NUMBER (instead of RANK)
+        # QUERY 1: ROW_NUMBER
         if has_numeric and has_categorical:
             st.subheader("Query 1: Ranking Analysis (ROW_NUMBER)")
             
@@ -247,7 +272,7 @@ if has_data and api_key:
                 st.dataframe(result1, use_container_width=True)
                 st.session_state.sql_result1 = result1
                 
-                st.success("✅ Top categories ranked without gaps (using ROW_NUMBER)")
+                st.success("✅ Top categories ranked (using ROW_NUMBER)")
             except Exception as e:
                 st.error(f"❌ Query error: {str(e)}")
         
@@ -537,16 +562,10 @@ Dataset:
                 pdf.set_font("Arial", "", 9)
                 
                 if 'sql_result1' in st.session_state:
-                    pdf.cell(0, 8, "Query 1 - Top Categories (by Rank):", ln=True)
+                    pdf.cell(0, 8, "Query 1 - Top Categories:", ln=True)
                     result = st.session_state.sql_result1.head(5)
                     for idx, row in result.iterrows():
-                        pdf.cell(0, 6, f"- Rank {int(row.iloc[4])}: {row.iloc[0]} ({row.iloc[5]}%)", ln=True)
-                
-                if 'sql_result2' in st.session_state:
-                    pdf.cell(0, 8, "Query 2 - Segmentation:", ln=True)
-                    result = st.session_state.sql_result2
-                    for idx, row in result.iterrows():
-                        pdf.cell(0, 6, f"- {row.iloc[0]}: Avg={row.iloc[2]}, Count={row.iloc[1]}", ln=True)
+                        pdf.cell(0, 6, f"- Rank {int(row.iloc[4])}: {row.iloc[0]}", ln=True)
                 
                 pdf.ln(3)
                 
