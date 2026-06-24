@@ -14,7 +14,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🤖 AI Business Report Generator with SQL Analytics")
+st.title("🤖 AI Business Report Generator with Advanced SQL")
 
 # SIDEBAR - UPLOAD & API KEY
 with st.sidebar:
@@ -53,7 +53,6 @@ with st.sidebar:
 
 # ==================== MAIN LOGIC ====================
 
-# Determine if we have data
 has_data = False
 df = None
 db_connection = None
@@ -74,10 +73,32 @@ if has_data and api_key:
         st.success("✅ CSV loaded into SQLite")
     
     if df is None and db_connection is not None:
-        # Query database for preview
         df = pd.read_sql("SELECT * FROM data LIMIT 1000", db_connection)
     
     st.success("✅ Data loaded successfully!")
+    
+    # AUTO-DETECT DATA STRUCTURE
+    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+    categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+    
+    # Check for date columns
+    has_date = False
+    date_col = None
+    for col in categorical_cols:
+        try:
+            pd.to_datetime(df[col])
+            has_date = True
+            date_col = col
+            break
+        except:
+            pass
+    
+    if 'Date' in df.columns:
+        has_date = True
+        date_col = 'Date'
+    
+    has_numeric = len(numeric_cols) > 0
+    has_categorical = len(categorical_cols) > 0
     
     # TABS
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
@@ -130,7 +151,6 @@ if has_data and api_key:
         if duplicates > 0:
             quality_issues.append(f"⚠️ **{duplicates} duplicate rows found**")
         
-        numeric_cols = df.select_dtypes(include=['number']).columns
         for col in numeric_cols:
             if (df[col] < 0).sum() > 0 and col.lower() not in ['change', 'variance', 'delta']:
                 quality_issues.append(f"⚠️ **Column '{col}' has negative values**")
@@ -158,20 +178,46 @@ if has_data and api_key:
         st.subheader("Data Preview")
         st.dataframe(df.head(10), use_container_width=True)
     
-    # ==================== TAB 2: SQL ANALYSIS (NEW) ====================
+    # ==================== TAB 2: SQL ANALYSIS (SMART) ====================
     with tab2:
         st.subheader("🔍 Advanced SQL Analysis")
         
-        st.write("**Auto-generated SQL queries to analyze your data:**")
+        st.write("**SQL Queries automatically generated based on your data structure:**")
         
-        # SQL QUERY 1: Aggregation with Window Function
-        st.subheader("Query 1: Ranking Analysis (Window Function)")
+        st.divider()
         
-        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-        categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+        # SHOW AVAILABLE QUERIES
+        st.subheader("📊 Available Queries")
         
-        if numeric_cols and categorical_cols:
-            # Build SQL query with RANK window function
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if has_numeric and has_categorical:
+                st.success("✅ Query 1: Ranking Analysis")
+            else:
+                st.error("❌ Query 1 requires numeric + categorical columns")
+        
+        with col2:
+            if has_numeric:
+                st.success("✅ Query 2: Segmentation")
+            else:
+                st.error("❌ Query 2 requires numeric columns")
+        
+        with col3:
+            if has_date and has_numeric:
+                st.success("✅ Query 3: Trend Analysis")
+            else:
+                if not has_date:
+                    st.warning("⚠️ Query 3 requires Date column")
+                if not has_numeric:
+                    st.warning("⚠️ Query 3 requires numeric columns")
+        
+        st.divider()
+        
+        # QUERY 1: RANKING (if available)
+        if has_numeric and has_categorical:
+            st.subheader("Query 1: Ranking Analysis (Window Function)")
+            
             sql_query1 = f"""
             SELECT 
                 "{categorical_cols[0]}",
@@ -187,21 +233,31 @@ if has_data and api_key:
             LIMIT 10
             """
             
+            st.write("**SQL Query:**")
             st.code(sql_query1, language="sql")
             
             try:
                 result1 = pd.read_sql(sql_query1, db_connection)
+                st.write("**Results:**")
                 st.dataframe(result1, use_container_width=True)
                 st.session_state.sql_result1 = result1
+                
+                st.success("✅ This shows the top categories by value, ranked with percentage of total")
             except Exception as e:
-                st.error(f"Query error: {e}")
+                st.error(f"❌ Query error: {str(e)}")
+        
+        else:
+            st.info("⚠️ **Query 1 Not Available**")
+            st.write(f"This query needs:")
+            st.write(f"- Numeric column: {has_numeric} (found: {', '.join(numeric_cols) if numeric_cols else 'None'})")
+            st.write(f"- Categorical column: {has_categorical} (found: {', '.join(categorical_cols) if categorical_cols else 'None'})")
         
         st.divider()
         
-        # SQL QUERY 2: CTE (Common Table Expression)
-        st.subheader("Query 2: Customer Segmentation using CTE")
-        
-        if numeric_cols:
+        # QUERY 2: SEGMENTATION (if available)
+        if has_numeric:
+            st.subheader("Query 2: Customer Segmentation (CTE)")
+            
             sql_query2 = f"""
             WITH stats AS (
                 SELECT 
@@ -215,8 +271,8 @@ if has_data and api_key:
                     *,
                     CASE 
                         WHEN CAST("{numeric_cols[0]}" AS FLOAT) >= (SELECT avg_value FROM stats) 
-                        THEN 'High'
-                        ELSE 'Low'
+                        THEN 'High Performer'
+                        ELSE 'Lower Performer'
                     END as segment
                 FROM data
             )
@@ -225,56 +281,73 @@ if has_data and api_key:
                 COUNT(*) as count,
                 ROUND(AVG(CAST("{numeric_cols[0]}" AS FLOAT)), 2) as avg_value,
                 ROUND(MIN(CAST("{numeric_cols[0]}" AS FLOAT)), 2) as min_value,
-                ROUND(MAX(CAST("{numeric_cols[0]}" AS FLOAT)), 2) as max_value
+                ROUND(MAX(CAST("{numeric_cols[0]}" AS FLOAT)), 2) as max_value,
+                ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM data), 2) as percentage
             FROM segmentation
             GROUP BY segment
+            ORDER BY avg_value DESC
             """
             
+            st.write("**SQL Query:**")
             st.code(sql_query2, language="sql")
             
             try:
                 result2 = pd.read_sql(sql_query2, db_connection)
+                st.write("**Results:**")
                 st.dataframe(result2, use_container_width=True)
                 st.session_state.sql_result2 = result2
+                
+                st.success("✅ This segments your data into High vs Low performers based on average value")
             except Exception as e:
-                st.error(f"Query error: {e}")
+                st.error(f"❌ Query error: {str(e)}")
+        
+        else:
+            st.info("⚠️ **Query 2 Not Available**")
+            st.write("This query needs: Numeric column (not found in your data)")
         
         st.divider()
         
-        # SQL QUERY 3: Trend Analysis
-        st.subheader("Query 3: Trend Analysis (Row-by-Row Changes)")
-        
-        if 'Date' in df.columns and numeric_cols:
+        # QUERY 3: TREND ANALYSIS (if available)
+        if has_date and has_numeric:
+            st.subheader("Query 3: Trend Analysis (LAG Window Function)")
+            
             sql_query3 = f"""
             SELECT 
-                "{categorical_cols[0] if categorical_cols else 'Date'}",
+                "{date_col}",
                 CAST("{numeric_cols[0]}" AS FLOAT) as current_value,
-                LAG(CAST("{numeric_cols[0]}" AS FLOAT)) OVER (ORDER BY "{categorical_cols[0] if categorical_cols else 'Date'}") as previous_value,
+                LAG(CAST("{numeric_cols[0]}" AS FLOAT)) OVER (ORDER BY "{date_col}") as previous_value,
                 ROUND(CAST("{numeric_cols[0]}" AS FLOAT) - 
-                      LAG(CAST("{numeric_cols[0]}" AS FLOAT)) OVER (ORDER BY "{categorical_cols[0] if categorical_cols else 'Date'}"), 2) as change,
+                      LAG(CAST("{numeric_cols[0]}" AS FLOAT)) OVER (ORDER BY "{date_col}"), 2) as change,
                 ROUND((CAST("{numeric_cols[0]}" AS FLOAT) - 
-                      LAG(CAST("{numeric_cols[0]}" AS FLOAT)) OVER (ORDER BY "{categorical_cols[0] if categorical_cols else 'Date'}")) 
-                      / LAG(CAST("{numeric_cols[0]}" AS FLOAT)) OVER (ORDER BY "{categorical_cols[0] if categorical_cols else 'Date'}") * 100, 2) as pct_change
+                      LAG(CAST("{numeric_cols[0]}" AS FLOAT)) OVER (ORDER BY "{date_col}")) 
+                      / LAG(CAST("{numeric_cols[0]}" AS FLOAT)) OVER (ORDER BY "{date_col}") * 100, 2) as pct_change
             FROM data
-            ORDER BY "{categorical_cols[0] if categorical_cols else 'Date'}"
-            LIMIT 15
+            ORDER BY "{date_col}"
+            LIMIT 20
             """
             
+            st.write("**SQL Query:**")
             st.code(sql_query3, language="sql")
             
             try:
                 result3 = pd.read_sql(sql_query3, db_connection)
+                st.write("**Results:**")
                 st.dataframe(result3, use_container_width=True)
                 st.session_state.sql_result3 = result3
+                
+                st.success("✅ This shows trends over time with period-over-period change")
             except Exception as e:
-                st.warning(f"Trend analysis not available for this data structure")
+                st.error(f"❌ Query error: {str(e)}")
+        
+        else:
+            st.info("⚠️ **Query 3 Not Available**")
+            st.write("This query needs:")
+            st.write(f"- Date column: {has_date} (found: {date_col if date_col else 'None'})")
+            st.write(f"- Numeric column: {has_numeric} (found: {', '.join(numeric_cols) if numeric_cols else 'None'})")
     
     # ==================== TAB 3: STATISTICAL ANALYSIS ====================
     with tab3:
         st.subheader("📊 Statistical Summary")
-        
-        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-        categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
         
         if numeric_cols:
             st.subheader("Numeric Column Statistics")
@@ -307,13 +380,20 @@ if has_data and api_key:
                 
                 fig = px.imshow(corr_matrix, text_auto=True, aspect="auto", title="Correlation Matrix")
                 st.plotly_chart(fig, use_container_width=True)
+        
+        if categorical_cols:
+            st.divider()
+            st.subheader("Categorical Column Analysis")
+            
+            for col in categorical_cols[:3]:
+                st.write(f"**{col}** - Top 10 Values:")
+                col_counts = df[col].value_counts().head(10)
+                fig = px.bar(x=col_counts.index, y=col_counts.values, labels={'x': col, 'y': 'Count'})
+                st.plotly_chart(fig, use_container_width=True)
     
     # ==================== TAB 4: VISUALIZATIONS ====================
     with tab4:
         st.subheader("📈 Data Visualizations")
-        
-        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-        categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
         
         if categorical_cols and numeric_cols:
             st.subheader("Bar Chart (Top 10)")
@@ -326,12 +406,12 @@ if has_data and api_key:
             )
             st.plotly_chart(fig_bar, use_container_width=True)
         
-        if 'Date' in df.columns and numeric_cols:
+        if has_date and numeric_cols:
             st.subheader("Line Chart (Trend)")
             try:
                 df_copy = df.copy()
-                df_copy['Date'] = pd.to_datetime(df_copy['Date'])
-                df_copy['YearMonth'] = df_copy['Date'].dt.strftime('%Y-%m')
+                df_copy[date_col] = pd.to_datetime(df_copy[date_col])
+                df_copy['YearMonth'] = df_copy[date_col].dt.strftime('%Y-%m')
                 df_monthly = df_copy.groupby('YearMonth')[numeric_cols[0]].sum().reset_index()
                 
                 fig_line = px.line(
@@ -343,7 +423,7 @@ if has_data and api_key:
                 )
                 st.plotly_chart(fig_line, use_container_width=True)
             except:
-                st.warning("Could not parse Date column")
+                st.warning("Could not parse date column for trend")
         
         if categorical_cols and numeric_cols:
             st.subheader("Pie Chart (Top 5)")
@@ -362,7 +442,6 @@ if has_data and api_key:
         
         if st.button("Generate AI Insights"):
             with st.spinner("🤖 Analyzing data with SQL + AI..."):
-                numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
                 
                 analysis = {
                     "Total Rows": len(df),
@@ -387,7 +466,7 @@ if has_data and api_key:
                 Sample data (first 5 rows):
                 {df.head(5).to_string()}
                 
-                Column names: {list(df.columns)}
+                Column names and types: {list(df.dtypes.items())}
                 """
                 
                 client = Groq(api_key=api_key)
@@ -401,7 +480,7 @@ if has_data and api_key:
                             "content": f"""Analyze this business dataset and provide:
 1. Business Domain: What type of business/data is this?
 2. Key Findings: 3-4 most important observations
-3. Business Risks: 2-3 potential problems or risks
+3. Business Risks: 2-3 potential problems or concerns
 4. Recommendations: 3-4 specific, actionable next steps
 
 Dataset:
@@ -456,11 +535,19 @@ Dataset:
                 pdf.cell(0, 10, "3. SQL Analysis Results", ln=True)
                 
                 pdf.set_font("Arial", "", 9)
+                
                 if 'sql_result1' in st.session_state:
-                    pdf.cell(0, 8, "Top Categories (by Rank):", ln=True)
+                    pdf.cell(0, 8, "Query 1 - Top Categories (by Rank):", ln=True)
                     result = st.session_state.sql_result1.head(5)
                     for idx, row in result.iterrows():
-                        pdf.cell(0, 6, f"- {row.iloc[0]}: {row.iloc[1]}", ln=True)
+                        pdf.cell(0, 6, f"- Rank {int(row.iloc[4])}: {row.iloc[0]} ({row.iloc[5]}%)", ln=True)
+                
+                if 'sql_result2' in st.session_state:
+                    pdf.cell(0, 8, "Query 2 - Segmentation:", ln=True)
+                    result = st.session_state.sql_result2
+                    for idx, row in result.iterrows():
+                        pdf.cell(0, 6, f"- {row.iloc[0]}: Avg={row.iloc[2]}, Count={row.iloc[1]}", ln=True)
+                
                 pdf.ln(3)
                 
                 # STATISTICAL METRICS
