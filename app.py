@@ -155,46 +155,7 @@ if has_data and api_key:
             if (df[col] < 0).sum() > 0 and col.lower() not in ['change', 'variance', 'delta']:
                 quality_issues.append(f"⚠️ **Column '{col}' has negative values**")
         
-        # ===== IMPROVED OUTLIER DETECTION - PER COLUMN =====
-        st.subheader("📊 Outlier Detection by Column")
-        
-        outlier_summary = []
-        total_outliers = 0
-        
-        for col in numeric_cols:
-            Q1 = df[col].quantile(0.25)
-            Q3 = df[col].quantile(0.75)
-            IQR = Q3 - Q1
-            
-            # Only flag if IQR > 0 (avoid division by zero with zeros)
-            if IQR > 0:
-                lower_bound = Q1 - 1.5 * IQR
-                upper_bound = Q3 + 1.5 * IQR
-                outlier_count = len(df[(df[col] < lower_bound) | (df[col] > upper_bound)])
-                outlier_pct = (outlier_count / len(df) * 100)
-            else:
-                # If IQR = 0, only non-zero values are "outliers"
-                outlier_count = len(df[df[col] != df[col].mode()[0]]) if len(df[col].mode()) > 0 else 0
-                outlier_pct = (outlier_count / len(df) * 100)
-            
-            if outlier_count > 0:
-                outlier_summary.append({
-                    'Column': col,
-                    'Outliers': outlier_count,
-                    '% of Data': round(outlier_pct, 2),
-                    'Min': round(df[col].min(), 2),
-                    'Max': round(df[col].max(), 2),
-                    'Mean': round(df[col].mean(), 2)
-                })
-                total_outliers += outlier_count
-        
-        if outlier_summary:
-            outlier_df = pd.DataFrame(outlier_summary)
-            st.dataframe(outlier_df, use_container_width=True)
-            st.info(f"📊 Total outlier occurrences across all numeric columns: {total_outliers}")
-        else:
-            st.success("✅ No significant outliers detected")
-        
+    
         st.divider()
         
         # Regular quality checks
