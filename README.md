@@ -4,7 +4,7 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-red.svg)](https://streamlit.io)
 [![SQLite](https://img.shields.io/badge/SQLite-3+-003B57.svg)](https://www.sqlite.org/)
 
-🚀 **[Click here to use the live app!](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)**
+# 🚀 **[Click here to use the live app!](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)**
 
 ---
 
