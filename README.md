@@ -1,16 +1,20 @@
+<div align="center">
+
 # 🤖 AI Business Report Generator
 
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-red.svg)](https://streamlit.io)
 [![SQLite](https://img.shields.io/badge/SQLite-3+-003B57.svg)](https://www.sqlite.org/)
 
-### 🚀 [**Click here to use the live app!**](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)
+[![Launch App](https://img.shields.io/badge/🚀_LAUNCH_LIVE_APP-Click_Here-success?style=for-the-badge&logo=streamlit&logoColor=white)](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)
 
 [Overview](#overview) •
 [Features](#-features) •
 [Tech Stack](#-tech-stack) •
 [Installation](#-installation) •
 [Troubleshooting](#-troubleshooting)
+
+</div>
 
 ---
 
