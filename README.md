@@ -4,7 +4,13 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-red.svg)](https://streamlit.io)
 [![SQLite](https://img.shields.io/badge/SQLite-3+-003B57.svg)](https://www.sqlite.org/)
 
-# 🚀 **[Click here to use the live app!](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)**
+### 🚀 [**Click here to use the live app!**](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)
+
+[Overview](#overview) •
+[Features](#-features) •
+[Tech Stack](#-tech-stack) •
+[Installation](#-installation) •
+[Troubleshooting](#-troubleshooting)
 
 ---
 
@@ -36,12 +42,14 @@ An **AI-powered business analytics platform** that transforms raw datasets into 
 ## ✨ Features
 
 ### 📤 Multi-Source Data Import
+
 - Upload CSV datasets directly
 - Connect to SQLite databases
 - PostgreSQL/MySQL support (ready for integration)
 - Automatic data profiling and validation
 
 ### 📊 Intelligent Data Quality Assessment
+
 - **Dataset Overview**: Row count, column count, unique values
 - **Missing Value Detection**: Identify incomplete data
 - **Duplicate Detection**: Find and flag duplicate records
@@ -53,6 +61,7 @@ An **AI-powered business analytics platform** that transforms raw datasets into 
 Demonstrates mastery of enterprise SQL concepts:
 
 #### Query 1: Ranking Analysis (Window Functions)
+
 ```sql
 ROW_NUMBER() OVER (ORDER BY SUM(sales) DESC) as rank
 ROUND(100.0 * SUM(sales) / (SELECT SUM(sales) FROM data)) as percentage_of_total
@@ -62,6 +71,7 @@ ROUND(100.0 * SUM(sales) / (SELECT SUM(sales) FROM data)) as percentage_of_total
 - **Business Value**: Quick performance comparison with percentile analysis
 
 #### Query 2: Segmentation (Common Table Expressions)
+
 ```sql
 WITH stats AS (...),
 segmentation AS (...)
@@ -72,6 +82,7 @@ SELECT * FROM segmentation
 - **Business Value**: Actionable customer segmentation for targeted strategies
 
 #### Query 3: Trend Analysis (LAG/LEAD Functions)
+
 ```sql
 LAG(value) OVER (ORDER BY date) as previous_value
 (current_value - previous_value) / previous_value * 100 as pct_change
@@ -81,6 +92,7 @@ LAG(value) OVER (ORDER BY date) as previous_value
 - **Business Value**: Identify inflection points and seasonality
 
 ### 📈 Interactive Visualizations
+
 - **Bar Charts**: Top performers and categories
 - **Line Charts**: Trends over time with monthly aggregation
 - **Pie Charts**: Distribution analysis
@@ -88,12 +100,14 @@ LAG(value) OVER (ORDER BY date) as previous_value
 - **Auto-scaling**: Charts adapt to data structure
 
 ### 📉 Statistical Analysis
+
 - **Descriptive Statistics**: Mean, median, std dev, quartiles
 - **Coefficient of Variation (CV)**: Measure relative volatility
 - **Correlation Matrix**: Identify strong relationships (>0.7)
 - **Distribution Analysis**: Understand data spread and outliers
 
 ### 🤖 AI-Powered Business Insights
+
 **Powered by**: Groq API + Llama 3.1 8B Instruct Model
 
 The AI analyzes your data and generates:
@@ -103,6 +117,7 @@ The AI analyzes your data and generates:
 - **Actionable Recommendations**: Specific, prioritized next steps
 
 ### 📄 Professional PDF Reports
+
 One-click generation of stakeholder-ready reports containing:
 - Dataset overview and structure
 - SQL analysis results (top categories, segments)
@@ -116,30 +131,37 @@ One-click generation of stakeholder-ready reports containing:
 ## 🛠️ Tech Stack
 
 ### Frontend & Framework
+
 - **Streamlit** - Interactive web app framework
 - **Python 3.9+** - Core language
 
 ### Data Processing & Analysis
+
 - **Pandas** - Data manipulation and transformation
 - **NumPy** - Numerical computations
 
 ### Visualization
+
 - **Plotly Express** - Interactive, professional charts
 - **Correlation Analysis** - Statistical visualization
 
 ### Database & SQL
+
 - **SQLite** - Local database support (in-memory for CSV)
 - **Advanced SQL**: Window Functions, CTEs, Aggregations, Joins
 - **SQL Engines**: PostgreSQL, MySQL ready
 
 ### Artificial Intelligence
+
 - **Groq API** - Fast inference platform
 - **Llama 3.1 8B Instruct** - Open-source LLM for business analysis
 
 ### Reporting
+
 - **FPDF2** - PDF generation with formatting
 
 ### Deployment
+
 - **Streamlit Cloud** - Live app hosting (serverless)
 - **GitHub** - Version control and CI/CD
 
@@ -148,6 +170,7 @@ One-click generation of stakeholder-ready reports containing:
 ## 🚀 How to Use
 
 ### Quick Start (Live App)
+
 1. **Open**: [Live Demo](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)
 2. **Upload**: CSV file or connect to database
 3. **Explore**: Data quality, SQL insights, statistics, visualizations
@@ -155,13 +178,15 @@ One-click generation of stakeholder-ready reports containing:
 5. **Download**: PDF report with all analysis
 
 ### Local Setup
-See [Installation](#installation) section below.
+
+See [Installation](#-installation) section below.
 
 ---
 
 ## ⚙️ Installation
 
 ### Prerequisites
+
 - Python 3.9 or higher
 - pip package manager
 - Groq API key (free tier available)
@@ -207,6 +232,7 @@ pip install -r requirements.txt
 ## ▶️ Running the Application
 
 ### Local Development
+
 ```bash
 streamlit run app.py
 ```
@@ -214,6 +240,7 @@ streamlit run app.py
 App opens at: `http://localhost:8501`
 
 ### Production (Streamlit Cloud)
+
 - Push code to GitHub
 - Go to https://share.streamlit.io
 - Connect your GitHub repo
@@ -224,6 +251,7 @@ App opens at: `http://localhost:8501`
 ## 🔑 API Configuration
 
 ### Getting a Groq API Key
+
 1. Visit https://console.groq.com
 2. Create account (free)
 3. Navigate to API Keys section
@@ -248,6 +276,7 @@ AI-Business-Report-Generator/
 ```
 
 ### Key Files
+
 - **app.py** (600+ lines)
   - Data quality validation
   - Advanced SQL query generation & execution
@@ -260,17 +289,20 @@ AI-Business-Report-Generator/
 ## 📊 Supported Data Types
 
 ### Data Formats
+
 - ✅ CSV files
 - ✅ SQLite databases
 - 🔜 PostgreSQL (ready to implement)
 - 🔜 MySQL (ready to implement)
 
 ### Data Size
+
 - Tested with 50,000+ rows
 - Handles multiple numeric columns
 - Optimized for retail, HR, finance, marketing datasets
 
 ### Sample Datasets
+
 Works best with:
 - **Retail**: Sales, inventory, transactions (product, store, sales, quantity)
 - **Finance**: Revenue, expenses, accounts (date, amount, category)
@@ -284,18 +316,21 @@ Works best with:
 This project demonstrates:
 
 ### Data Skills
+
 - ✅ Advanced SQL (Window Functions, CTEs, LAG/LEAD)
 - ✅ Pandas data manipulation and analysis
 - ✅ Statistical analysis (correlation, distribution)
 - ✅ Data quality validation and profiling
 
 ### Analytics Skills
+
 - ✅ Business metrics and KPI calculation
 - ✅ Segmentation and ranking analysis
 - ✅ Trend detection and time-series analysis
 - ✅ Actionable insights from raw data
 
 ### Software Engineering
+
 - ✅ Full-stack development (frontend, backend, database)
 - ✅ API integration (Groq/LLM)
 - ✅ PDF generation
@@ -303,6 +338,7 @@ This project demonstrates:
 - ✅ Version control (Git/GitHub)
 
 ### Professional Skills
+
 - ✅ Stakeholder-ready reporting
 - ✅ Automated workflows
 - ✅ User experience design
@@ -329,20 +365,24 @@ MIT License - See LICENSE file for details
 ## ❓ Troubleshooting
 
 ### Issue: "ModuleNotFoundError"
+
 **Solution**: Make sure virtual environment is activated and dependencies installed
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Issue: "Groq API Error"
+
 **Solution**: Verify API key is correct and has active credits
 - Check key at https://console.groq.com/keys
 - Ensure key is pasted correctly (no spaces)
 
 ### Issue: "Data Quality shows high outlier percentage"
+
 **Solution**: This can happen with zero-heavy columns (inventory). Check outlier detection per column for realistic view.
 
 ### Issue: "SQL query fails"
+
 **Solution**: Ensure your data has:
 - At least one numeric column (for Query 2 & 3)
 - At least one categorical column (for Query 1)
