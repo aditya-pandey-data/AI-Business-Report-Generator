@@ -399,4 +399,4 @@ For issues, questions, or suggestions:
 
 ---
 
-**Happy analyzing!** 📊✨
+**Happy analysing!** 📊✨
