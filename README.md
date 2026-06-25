@@ -381,10 +381,6 @@ pip install -r requirements.txt
 - Check key at https://console.groq.com/keys
 - Ensure key is pasted correctly (no spaces)
 
-### Issue: "Data Quality shows high outlier percentage"
-
-**Solution**: This can happen with zero-heavy columns (inventory). Check outlier detection per column for realistic view.
-
 ### Issue: "SQL query fails"
 
 **Solution**: Ensure your data has:
