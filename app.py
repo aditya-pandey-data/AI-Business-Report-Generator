@@ -59,6 +59,11 @@ db_connection = None
 
 if data_source == "Upload CSV" and uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
+    
+    # ---- SMART MISSING VALUE HANDLING ----
+    df = df.dropna(axis=1, how='all')                          # remove fully empty columns
+    df = df.loc[:, df.isnull().mean() < 0.7]                  # remove 70%+ missing columns
+    
     has_data = True
 elif data_source == "Connect to Database":
     if db_connection is not None:
@@ -80,7 +85,13 @@ if has_data and api_key:
     # AUTO-DETECT DATA STRUCTURE
     numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
     categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
-    
+
+    # ---- FILL REMAINING MISSING VALUES ----
+    if numeric_cols:
+        df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].median())   # fill numeric with median
+    if categorical_cols:
+        df[categorical_cols] = df[categorical_cols].fillna("Unknown")           # fill categorical with Unknown
+
     # Check for date columns
     has_date = False
     date_col = None
@@ -101,13 +112,14 @@ if has_data and api_key:
     has_categorical = len(categorical_cols) > 0
     
     # TABS
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-        "Data Quality", 
-        "SQL Analysis", 
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+        "Data Quality",
+        "SQL Analysis",
         "Statistical Analysis",
-        "Visualizations", 
-        "AI Insights", 
-        "Download Report"
+        "Visualizations",
+        "AI Insights",
+        "Download Report",
+        "Forecasting"
     ])
     
     # ==================== TAB 1: DATA QUALITY ====================
@@ -155,10 +167,8 @@ if has_data and api_key:
             if (df[col] < 0).sum() > 0 and col.lower() not in ['change', 'variance', 'delta']:
                 quality_issues.append(f"⚠️ **Column '{col}' has negative values**")
         
-    
         st.divider()
         
-        # Regular quality checks
         if len(quality_issues) == 0:
             st.success("✅ Data quality looks good!")
         else:
@@ -169,7 +179,7 @@ if has_data and api_key:
         st.subheader("Data Preview")
         st.dataframe(df.head(10), use_container_width=True)
     
-    # ==================== TAB 2: SQL ANALYSIS (SMART) ====================
+    # ==================== TAB 2: SQL ANALYSIS ====================
     with tab2:
         st.subheader("🔍 Advanced SQL Analysis")
         
@@ -177,7 +187,6 @@ if has_data and api_key:
         
         st.divider()
         
-        # SHOW AVAILABLE QUERIES
         st.subheader("📊 Available Queries")
         
         col1, col2, col3 = st.columns(3)
@@ -232,7 +241,6 @@ if has_data and api_key:
                 st.write("**Results:**")
                 st.dataframe(result1, use_container_width=True)
                 st.session_state.sql_result1 = result1
-                
                 st.success("✅ Top categories ranked (using ROW_NUMBER)")
             except Exception as e:
                 st.error(f"❌ Query error: {str(e)}")
@@ -285,7 +293,6 @@ if has_data and api_key:
                 st.write("**Results:**")
                 st.dataframe(result2, use_container_width=True)
                 st.session_state.sql_result2 = result2
-                
                 st.success("✅ Data segmented into High vs Low performers")
             except Exception as e:
                 st.error(f"❌ Query error: {str(e)}")
@@ -322,7 +329,6 @@ if has_data and api_key:
                 st.write("**Results:**")
                 st.dataframe(result3, use_container_width=True)
                 st.session_state.sql_result3 = result3
-                
                 st.success("✅ Trend analysis with period-over-period changes")
             except Exception as e:
                 st.error(f"❌ Query error: {str(e)}")
@@ -385,8 +391,8 @@ if has_data and api_key:
             st.subheader("Bar Chart (Top 10)")
             df_top = df.nlargest(10, numeric_cols[0])
             fig_bar = px.bar(
-                df_top, 
-                x=categorical_cols[0], 
+                df_top,
+                x=categorical_cols[0],
                 y=numeric_cols[0],
                 title=f"Top 10: {categorical_cols[0]}"
             )
@@ -401,8 +407,8 @@ if has_data and api_key:
                 df_monthly = df_copy.groupby('YearMonth')[numeric_cols[0]].sum().reset_index()
                 
                 fig_line = px.line(
-                    df_monthly, 
-                    x='YearMonth', 
+                    df_monthly,
+                    x='YearMonth',
                     y=numeric_cols[0],
                     title="Monthly Trend",
                     markers=True
@@ -415,7 +421,7 @@ if has_data and api_key:
             st.subheader("Pie Chart (Top 5)")
             df_top5 = df.nlargest(5, numeric_cols[0])
             fig_pie = px.pie(
-                df_top5, 
+                df_top5,
                 names=categorical_cols[0],
                 values=numeric_cols[0],
                 title="Top 5 Distribution"
@@ -497,7 +503,6 @@ Dataset:
                 pdf.cell(0, 8, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align="C")
                 pdf.ln(5)
                 
-                # DATASET OVERVIEW
                 pdf.set_font("Arial", "B", 14)
                 pdf.cell(0, 10, "1. Dataset Overview", ln=True)
                 
@@ -507,7 +512,6 @@ Dataset:
                 pdf.cell(0, 8, f"Missing Values: {df.isnull().sum().sum()}", ln=True)
                 pdf.ln(5)
                 
-                # COLUMN INFORMATION
                 pdf.set_font("Arial", "B", 14)
                 pdf.cell(0, 10, "2. Column Information", ln=True)
                 
@@ -516,7 +520,6 @@ Dataset:
                     pdf.cell(0, 7, f"- {col}: {df[col].dtype}", ln=True)
                 pdf.ln(3)
                 
-                # SQL ANALYSIS
                 pdf.set_font("Arial", "B", 14)
                 pdf.cell(0, 10, "3. SQL Analysis Results", ln=True)
                 
@@ -530,7 +533,6 @@ Dataset:
                 
                 pdf.ln(3)
                 
-                # STATISTICAL METRICS
                 if 'analysis' in st.session_state:
                     pdf.set_font("Arial", "B", 14)
                     pdf.cell(0, 10, "4. Statistical Metrics", ln=True)
@@ -540,13 +542,19 @@ Dataset:
                         pdf.cell(0, 6, f"- {key}: {value}", ln=True)
                     pdf.ln(3)
                 
-                # AI INSIGHTS
                 if 'ai_response' in st.session_state:
                     pdf.set_font("Arial", "B", 14)
                     pdf.cell(0, 10, "5. AI Analysis & Recommendations", ln=True)
                     
                     pdf.set_font("Arial", "", 10)
                     pdf.multi_cell(0, 5, st.session_state.ai_response)
+                
+                if 'forecast_df' in st.session_state:
+                    pdf.set_font("Arial", "B", 14)
+                    pdf.cell(0, 10, "6. Forecast", ln=True)
+                    pdf.set_font("Arial", "", 9)
+                    for idx, row in st.session_state.forecast_df.iterrows():
+                        pdf.cell(0, 6, f"- {row['YearMonth'].strftime('%b %Y')}: {row[st.session_state.forecast_col]:,.2f}", ln=True)
                 
                 pdf_path = "report.pdf"
                 pdf.output(pdf_path)
@@ -560,6 +568,76 @@ Dataset:
                     )
                 
                 st.success("✅ PDF created successfully!")
+    
+    # ==================== TAB 7: FORECASTING ====================
+    with tab7:
+        st.subheader("🔮 Simple Forecasting")
+        
+        if has_date and has_numeric:
+            forecast_col = st.selectbox("Column to forecast:", numeric_cols)
+            periods = st.slider("Months to forecast ahead:", 1, 12, 3)
+            
+            try:
+                df_copy = df.copy()
+                df_copy[date_col] = pd.to_datetime(df_copy[date_col])
+                df_copy['YearMonth'] = df_copy[date_col].dt.to_period('M')
+                monthly = df_copy.groupby('YearMonth')[forecast_col].sum().reset_index()
+                monthly['YearMonth'] = monthly['YearMonth'].dt.to_timestamp()
+                monthly = monthly.sort_values('YearMonth').reset_index(drop=True)
+                
+                if len(monthly) < 3:
+                    st.warning("⚠️ Need at least 3 time periods of data to forecast.")
+                else:
+                    x = np.arange(len(monthly))
+                    y = monthly[forecast_col].values
+                    coeffs = np.polyfit(x, y, 1)
+                    trend = np.poly1d(coeffs)
+                    
+                    future_x = np.arange(len(monthly), len(monthly) + periods)
+                    future_dates = pd.date_range(
+                        monthly['YearMonth'].iloc[-1] + pd.offsets.MonthBegin(1),
+                        periods=periods,
+                        freq='MS'
+                    )
+                    future_y = trend(future_x)
+                    
+                    forecast_df = pd.DataFrame({
+                        'YearMonth': future_dates,
+                        forecast_col: future_y,
+                        'Type': 'Forecast'
+                    })
+                    actual_df = monthly.copy()
+                    actual_df['Type'] = 'Actual'
+                    combined = pd.concat([actual_df, forecast_df], ignore_index=True)
+                    
+                    fig = px.line(
+                        combined,
+                        x='YearMonth',
+                        y=forecast_col,
+                        color='Type',
+                        markers=True,
+                        title=f"{forecast_col} Forecast"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    st.write("**Forecasted Values:**")
+                    st.dataframe(forecast_df[['YearMonth', forecast_col]], use_container_width=True)
+                    
+                    growth_rate = ((future_y[-1] - y[-1]) / y[-1] * 100) if y[-1] != 0 else 0
+                    st.metric(
+                        f"Projected change by {future_dates[-1].strftime('%b %Y')}",
+                        f"{future_y[-1]:,.2f}",
+                        f"{growth_rate:+.1f}%"
+                    )
+                    
+                    st.session_state.forecast_df = forecast_df
+                    st.session_state.forecast_col = forecast_col
+            
+            except Exception as e:
+                st.error(f"Could not generate forecast: {str(e)}")
+        
+        else:
+            st.info("⚠️ Forecasting requires a date column and numeric column.")
 
 elif not api_key:
     st.warning("⚠️ Please enter your Groq API key in the sidebar")
