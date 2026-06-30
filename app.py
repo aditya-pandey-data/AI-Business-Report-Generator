@@ -88,28 +88,34 @@ if has_data and api_key:
 
     # ---- FILL REMAINING MISSING VALUES ----
     if numeric_cols:
-        df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].median())   # fill numeric with median
+        df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].median())
     if categorical_cols:
-        df[categorical_cols] = df[categorical_cols].fillna("Unknown")           # fill categorical with Unknown
+        df[categorical_cols] = df[categorical_cols].fillna("Unknown")
 
     # Check for date columns
     has_date = False
     date_col = None
+    date_cols_detected = []
     for col in categorical_cols:
         try:
             pd.to_datetime(df[col])
             has_date = True
             date_col = col
-            break
+            date_cols_detected.append(col)
         except:
             pass
     
     if 'Date' in df.columns:
         has_date = True
         date_col = 'Date'
-    
+        if 'Date' not in date_cols_detected:
+            date_cols_detected.append('Date')
+
+    # FIX: non-date categorical columns only (for SQL ranking)
+    non_date_categorical_cols = [col for col in categorical_cols if col not in date_cols_detected]
+
     has_numeric = len(numeric_cols) > 0
-    has_categorical = len(categorical_cols) > 0
+    has_categorical = len(non_date_categorical_cols) > 0
     
     # TABS
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
@@ -214,13 +220,13 @@ if has_data and api_key:
         
         st.divider()
         
-        # QUERY 1: ROW_NUMBER
+        # QUERY 1: ROW_NUMBER — uses non_date_categorical_cols
         if has_numeric and has_categorical:
             st.subheader("Query 1: Ranking Analysis (ROW_NUMBER)")
             
             sql_query1 = f"""
             SELECT 
-                "{categorical_cols[0]}",
+                "{non_date_categorical_cols[0]}",
                 SUM(CAST("{numeric_cols[0]}" AS FLOAT)) as total_value,
                 AVG(CAST("{numeric_cols[0]}" AS FLOAT)) as avg_value,
                 COUNT(*) as count,
@@ -228,7 +234,7 @@ if has_data and api_key:
                 ROUND(100.0 * SUM(CAST("{numeric_cols[0]}" AS FLOAT)) / 
                     (SELECT SUM(CAST("{numeric_cols[0]}" AS FLOAT)) FROM data), 2) as percentage_of_total
             FROM data
-            GROUP BY "{categorical_cols[0]}"
+            GROUP BY "{non_date_categorical_cols[0]}"
             ORDER BY total_value DESC
             LIMIT 10
             """
@@ -377,7 +383,7 @@ if has_data and api_key:
             st.divider()
             st.subheader("Categorical Column Analysis")
             
-            for col in categorical_cols[:3]:
+            for col in non_date_categorical_cols[:3]:
                 st.write(f"**{col}** - Top 10 Values:")
                 col_counts = df[col].value_counts().head(10)
                 fig = px.bar(x=col_counts.index, y=col_counts.values, labels={'x': col, 'y': 'Count'})
@@ -387,14 +393,14 @@ if has_data and api_key:
     with tab4:
         st.subheader("📈 Data Visualizations")
         
-        if categorical_cols and numeric_cols:
+        if has_categorical and numeric_cols:
             st.subheader("Bar Chart (Top 10)")
             df_top = df.nlargest(10, numeric_cols[0])
             fig_bar = px.bar(
                 df_top,
-                x=categorical_cols[0],
+                x=non_date_categorical_cols[0],
                 y=numeric_cols[0],
-                title=f"Top 10: {categorical_cols[0]}"
+                title=f"Top 10: {non_date_categorical_cols[0]}"
             )
             st.plotly_chart(fig_bar, use_container_width=True)
         
@@ -417,12 +423,12 @@ if has_data and api_key:
             except:
                 st.warning("Could not parse date column for trend")
         
-        if categorical_cols and numeric_cols:
+        if has_categorical and numeric_cols:
             st.subheader("Pie Chart (Top 5)")
             df_top5 = df.nlargest(5, numeric_cols[0])
             fig_pie = px.pie(
                 df_top5,
-                names=categorical_cols[0],
+                names=non_date_categorical_cols[0],
                 values=numeric_cols[0],
                 title="Top 5 Distribution"
             )
@@ -549,9 +555,11 @@ Dataset:
                     pdf.set_font("Arial", "", 10)
                     pdf.multi_cell(0, 5, st.session_state.ai_response)
                 
+                # FIX: use multi_cell so "6. Forecast" never gets cut off
                 if 'forecast_df' in st.session_state:
+                    pdf.ln(3)
                     pdf.set_font("Arial", "B", 14)
-                    pdf.cell(0, 10, "6. Forecast", ln=True)
+                    pdf.multi_cell(0, 10, "6. Forecast")
                     pdf.set_font("Arial", "", 9)
                     for idx, row in st.session_state.forecast_df.iterrows():
                         pdf.cell(0, 6, f"- {row['YearMonth'].strftime('%b %Y')}: {row[st.session_state.forecast_col]:,.2f}", ln=True)
