@@ -7,6 +7,7 @@ from fpdf import FPDF
 from datetime import datetime
 import sqlite3
 import os
+import re
 
 st.set_page_config(
     page_title="AI Business Report Generator",
@@ -16,19 +17,17 @@ st.set_page_config(
 
 st.title("🤖 AI Business Report Generator with Advanced SQL")
 
-# SIDEBAR - UPLOAD & API KEY
+# SIDEBAR
 with st.sidebar:
     st.header("📤 Data Source")
-    
     data_source = st.radio("Choose data source:", ["Upload CSV", "Connect to Database"])
-    
+
     if data_source == "Upload CSV":
         uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
         db_connection = None
     else:
         st.subheader("Database Connection")
         db_type = st.selectbox("Database Type:", ["SQLite (Local)", "PostgreSQL", "MySQL"])
-        
         if db_type == "SQLite (Local)":
             db_file = st.text_input("SQLite file path (e.g., data.db):")
             if db_file and os.path.exists(db_file):
@@ -43,16 +42,21 @@ with st.sidebar:
         else:
             st.warning("Enter connection details for PostgreSQL/MySQL (optional)")
             db_connection = None
-        
         uploaded_file = None
-    
+
     st.divider()
-    
     st.header("🔑 API Configuration")
     api_key = st.text_input("Enter your Groq API key", type="password")
 
-# ==================== MAIN LOGIC ====================
+# ==================== HELPER: clean markdown for PDF ====================
+def clean_for_pdf(text):
+    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+    text = re.sub(r'\*(.+?)\*', r'\1', text)
+    text = re.sub(r'#{1,6}\s?', '', text)
+    text = text.encode('latin-1', 'replace').decode('latin-1')
+    return text
 
+# ==================== MAIN LOGIC ====================
 has_data = False
 df = None
 db_connection = None
@@ -87,24 +91,30 @@ if has_data and api_key:
     if categorical_cols:
         df[categorical_cols] = df[categorical_cols].fillna("Unknown")
 
+    # ---- IMPROVED DATE DETECTION ----
+    # Check by column name OR by content
     has_date = False
     date_col = None
     date_cols_detected = []
+
     for col in categorical_cols:
+        # Check column name contains date/time keywords
+        col_lower = col.lower()
+        name_is_date = any(word in col_lower for word in ['date', 'time', 'month', 'year', 'day'])
+        # Check content can be parsed as date
         try:
-            pd.to_datetime(df[col])
-            has_date = True
-            date_col = col
-            date_cols_detected.append(col)
+            pd.to_datetime(df[col], errors='raise')
+            content_is_date = True
         except:
-            pass
+            content_is_date = False
 
-    if 'Date' in df.columns:
-        has_date = True
-        date_col = 'Date'
-        if 'Date' not in date_cols_detected:
-            date_cols_detected.append('Date')
+        if name_is_date or content_is_date:
+            date_cols_detected.append(col)
+            if date_col is None:
+                has_date = True
+                date_col = col
 
+    # non-date categoricals only
     non_date_categorical_cols = [col for col in categorical_cols if col not in date_cols_detected]
 
     has_numeric = len(numeric_cols) > 0
@@ -349,7 +359,7 @@ if has_data and api_key:
                 fig = px.imshow(corr_matrix, text_auto=True, aspect="auto", title="Correlation Matrix")
                 st.plotly_chart(fig, use_container_width=True)
 
-        if categorical_cols:
+        if non_date_categorical_cols:
             st.divider()
             st.subheader("Categorical Column Analysis")
             for col in non_date_categorical_cols[:3]:
@@ -477,35 +487,35 @@ Dataset:
                 pdf.cell(0, 8, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align="C")
                 pdf.ln(5)
 
+                # 1. Dataset Overview
                 pdf.set_font("Arial", "B", 14)
                 pdf.cell(0, 10, "1. Dataset Overview", ln=True)
-
                 pdf.set_font("Arial", "", 10)
                 pdf.cell(0, 8, f"Total Rows: {len(df)}", ln=True)
                 pdf.cell(0, 8, f"Total Columns: {len(df.columns)}", ln=True)
                 pdf.cell(0, 8, f"Missing Values: {df.isnull().sum().sum()}", ln=True)
                 pdf.ln(5)
 
+                # 2. Column Information
                 pdf.set_font("Arial", "B", 14)
                 pdf.cell(0, 10, "2. Column Information", ln=True)
-
                 pdf.set_font("Arial", "", 9)
                 for col in df.columns[:15]:
                     pdf.cell(0, 7, f"- {col}: {df[col].dtype}", ln=True)
                 pdf.ln(3)
 
+                # 3. SQL Results
                 pdf.set_font("Arial", "B", 14)
                 pdf.cell(0, 10, "3. SQL Analysis Results", ln=True)
-
                 pdf.set_font("Arial", "", 9)
                 if 'sql_result1' in st.session_state:
                     pdf.cell(0, 8, "Query 1 - Top Categories:", ln=True)
                     result = st.session_state.sql_result1.head(5)
                     for idx, row in result.iterrows():
                         pdf.cell(0, 6, f"- Rank {int(row.iloc[4])}: {row.iloc[0]}", ln=True)
-
                 pdf.ln(3)
 
+                # 4. Statistical Metrics
                 if 'analysis' in st.session_state:
                     pdf.set_font("Arial", "B", 14)
                     pdf.cell(0, 10, "4. Statistical Metrics", ln=True)
@@ -514,12 +524,15 @@ Dataset:
                         pdf.cell(0, 6, f"- {key}: {value}", ln=True)
                     pdf.ln(3)
 
+                # 5. AI Insights - clean markdown before writing
                 if 'ai_response' in st.session_state:
                     pdf.set_font("Arial", "B", 14)
                     pdf.cell(0, 10, "5. AI Analysis & Recommendations", ln=True)
                     pdf.set_font("Arial", "", 10)
-                    pdf.multi_cell(0, 5, st.session_state.ai_response)
+                    cleaned_ai = clean_for_pdf(st.session_state.ai_response)
+                    pdf.multi_cell(0, 6, cleaned_ai)
 
+                # 6. Forecast - always starts on new page
                 if 'forecast_df' in st.session_state:
                     pdf.add_page()
                     pdf.set_font("Arial", "B", 14)
