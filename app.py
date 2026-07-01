@@ -63,7 +63,7 @@ if data_source == "Upload CSV" and uploaded_file is not None:
     # ---- SMART MISSING VALUE HANDLING ----
     df = df.dropna(axis=1, how='all')                          # remove fully empty columns
     df = df.loc[:, df.isnull().mean() < 0.7]                  # remove 70%+ missing columns
-    
+    df = df.drop_duplicates()
     has_data = True
 elif data_source == "Connect to Database":
     if db_connection is not None:
