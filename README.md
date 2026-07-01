@@ -1,4 +1,4 @@
-<div align="center">
+gi<div align="center">
 
 # 🤖 AI Business Report Generator
 
@@ -20,9 +20,9 @@
 
 ## Overview
 
-An **AI-powered business analytics platform** that transforms raw datasets into actionable insights with advanced SQL analytics, interactive visualizations, and professional PDF reports.
+An **AI-powered business analytics platform** that transforms raw datasets into actionable insights with advanced SQL analytics, interactive visualizations, simple forecasting, and professional PDF reports.
 
-**Upload any CSV dataset** → Get **instant analysis** with SQL queries, AI insights, and downloadable reports. Perfect for retail, finance, HR, marketing, and operations data.
+**Upload any CSV dataset** → Get **instant analysis** with SQL queries, AI insights, forecasting, and downloadable reports. Perfect for retail, finance, HR, marketing, and operations data.
 
 ---
 
@@ -31,7 +31,8 @@ An **AI-powered business analytics platform** that transforms raw datasets into 
 - ✅ **Advanced SQL Analytics** - Window Functions (RANK, ROW_NUMBER, LAG/LEAD), CTEs, and aggregations
 - ✅ **Smart Data Detection** - Automatically identifies data structure and runs relevant analyses
 - ✅ **Real-time AI Insights** - Groq API integration for business context, not just raw analysis
-- ✅ **Professional PDF Reports** - Stakeholder-ready exports with SQL results + AI recommendations
+- ✅ **Simple Forecasting** - Linear trend forecasting with interactive Plotly charts and projected values
+- ✅ **Professional PDF Reports** - Stakeholder-ready exports with SQL results + AI recommendations + forecast
 - ✅ **No Configuration Needed** - Upload and analyze in seconds
 - ✅ **Database Support** - CSV, SQLite, PostgreSQL, MySQL ready
 
@@ -55,9 +56,10 @@ An **AI-powered business analytics platform** that transforms raw datasets into 
 ### 📊 Intelligent Data Quality Assessment
 
 - **Dataset Overview**: Row count, column count, unique values
-- **Missing Value Detection**: Identify incomplete data
-- **Duplicate Detection**: Find and flag duplicate records
+- **Missing Value Detection**: Automatically removes fully empty columns and columns with 70%+ missing values
+- **Duplicate Detection**: Auto-removes duplicate rows on upload
 - **Column Profiling**: Data types, cardinality, null counts
+- **Smart Imputation**: Fills remaining numeric missing values with median, categorical with "Unknown"
 - **Outlier Detection**: Smart IQR-based outlier identification per column
 
 ### 🗄️ Advanced SQL Analytics 
@@ -120,14 +122,27 @@ The AI analyzes your data and generates:
 - **Risk Identification**: Potential business problems or data quality issues
 - **Actionable Recommendations**: Specific, prioritized next steps
 
+### 🔮 Simple Forecasting
+
+Auto-detects date and numeric columns and generates a linear trend forecast:
+
+- **Method**: Linear regression using NumPy (`np.polyfit`) — the same method analysts use for trendlines in Excel
+- **Input**: Select any numeric column + choose how many months ahead to forecast (1–12)
+- **Output**:
+  - Interactive Plotly line chart showing Actual vs Forecast
+  - Table of forecasted values by month
+  - Projected change % metric
+- **Included in PDF report**: Forecast values are automatically added to the downloadable report
+- **No extra libraries needed**: Built entirely with NumPy and Pandas
+
 ### 📄 Professional PDF Reports
 
 One-click generation of stakeholder-ready reports containing:
 - Dataset overview and structure
 - SQL analysis results (top categories, segments)
 - Statistical metrics and correlations
-- AI-generated business context
-- Recommendations and action items
+- AI-generated business context and recommendations
+- Forecast values by month (if forecasting was run)
 - Automatically timestamped with download
 
 ---
@@ -142,7 +157,7 @@ One-click generation of stakeholder-ready reports containing:
 ### Data Processing & Analysis
 
 - **Pandas** - Data manipulation and transformation
-- **NumPy** - Numerical computations
+- **NumPy** - Numerical computations and linear trend forecasting
 
 ### Visualization
 
@@ -178,8 +193,9 @@ One-click generation of stakeholder-ready reports containing:
 1. **Open**: [Live Demo](https://ai-business-report-generator-ugnebx9hxgxkvk722n6qpg.streamlit.app/)
 2. **Upload**: CSV file or connect to database
 3. **Explore**: Data quality, SQL insights, statistics, visualizations
-4. **Generate**: Click "Generate AI Insights" for business recommendations
-5. **Download**: PDF report with all analysis
+4. **Forecast**: Go to Forecasting tab, select a column, choose months ahead
+5. **Generate**: Click "Generate AI Insights" for business recommendations
+6. **Download**: PDF report with all analysis including forecast
 
 ### Local Setup
 
@@ -282,9 +298,10 @@ AI-Business-Report-Generator/
 ### Key Files
 
 - **app.py** (600+ lines)
-  - Data quality validation
+  - Data quality validation and smart missing value handling
   - Advanced SQL query generation & execution
   - Statistical analysis
+  - Linear trend forecasting
   - AI integration
   - PDF report generation
 
@@ -301,7 +318,7 @@ AI-Business-Report-Generator/
 
 ### Data Size
 
-- Tested with 50,000+ rows
+- Tested with 125,000+ rows
 - Handles multiple numeric columns
 - Optimized for retail, HR, finance, marketing datasets
 
@@ -325,12 +342,14 @@ This project demonstrates:
 - ✅ Pandas data manipulation and analysis
 - ✅ Statistical analysis (correlation, distribution)
 - ✅ Data quality validation and profiling
+- ✅ Smart missing value handling and deduplication
 
 ### Analytics Skills
 
 - ✅ Business metrics and KPI calculation
 - ✅ Segmentation and ranking analysis
 - ✅ Trend detection and time-series analysis
+- ✅ Linear trend forecasting (NumPy polyfit)
 - ✅ Actionable insights from raw data
 
 ### Software Engineering
@@ -388,6 +407,13 @@ pip install -r requirements.txt
 - At least one categorical column (for Query 1)
 - A Date column (for Query 3 - trends)
 
+### Issue: "Forecasting tab shows blank"
+
+**Solution**: Ensure your data has:
+- At least one date column (named with "date", "time", "month", "year", or "day")
+- At least one numeric column
+- At least 3 months of data for a meaningful forecast
+
 ---
 
 ## 📞 Support
@@ -398,5 +424,3 @@ For issues, questions, or suggestions:
 3. **LinkedIn**: Message me directly
 
 ---
-
-**Happy analysing!** 📊✨
