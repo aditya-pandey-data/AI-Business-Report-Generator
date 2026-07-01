@@ -421,6 +421,6 @@ pip install -r requirements.txt
 For issues, questions, or suggestions:
 1. **GitHub Issues**: Create an issue on the repository
 2. **Email**: adityapandey12391@gmail.com
-3. **LinkedIn**: Message me directly
+3. **LinkedIn**: Message me directly - https://linkedin.com/in/aditya-pandey-analytics
 
 ---
