@@ -352,13 +352,13 @@ This project demonstrates:
 - ✅ Linear trend forecasting (NumPy polyfit)
 - ✅ Actionable insights from raw data
 
-### Software Engineering
+### Tools & Implementation
 
-- ✅ Full-stack development (frontend, backend, database)
 - ✅ API integration (Groq/LLM)
-- ✅ PDF generation
+- ✅ PDF report generation
 - ✅ Cloud deployment (Streamlit Cloud)
 - ✅ Version control (Git/GitHub)
+- ✅ Web app development (Streamlit)
 
 ### Professional Skills
 
