@@ -1,4 +1,4 @@
-gi<div align="center">
+<div align="center">
 
 # 🤖 AI Business Report Generator
 
