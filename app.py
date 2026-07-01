@@ -556,14 +556,16 @@ Dataset:
                     pdf.multi_cell(0, 5, st.session_state.ai_response)
                 
                 # FIX: use multi_cell so "6. Forecast" never gets cut off
-                if 'forecast_df' in st.session_state:
-                    pdf.ln(3)
+                 if 'forecast_df' in st.session_state:
+                    pdf.add_page()
                     pdf.set_font("Arial", "B", 14)
-                    pdf.multi_cell(0, 10, "6. Forecast")
+                    pdf.cell(190, 10, "6. Forecast", ln=True)
                     pdf.set_font("Arial", "", 9)
-                    for idx, row in st.session_state.forecast_df.iterrows():
-                         forecast_text = f"- {row['YearMonth'].strftime('%b %Y')}: {row[st.session_state.forecast_col]:,.2f}"
-                         pdf.cell(190, 6, forecast_text, ln=True)
+                for idx, row in st.session_state.forecast_df.iterrows():
+                    month_str = row['YearMonth'].strftime('%b %Y')
+                    value_str = f"{row[st.session_state.forecast_col]:,.2f}"
+                    pdf.cell(190, 6, f"- {month_str}: {value_str}", ln=True)
+                         
                 
                 pdf_path = "report.pdf"
                 pdf.output(pdf_path)
