@@ -562,7 +562,8 @@ Dataset:
                     pdf.multi_cell(0, 10, "6. Forecast")
                     pdf.set_font("Arial", "", 9)
                     for idx, row in st.session_state.forecast_df.iterrows():
-                        pdf.multi_cell(0, 6, f"- {row['YearMonth'].strftime('%b %Y')}: {row[st.session_state.forecast_col]:,.2f}", ln=True)
+                         forecast_text = f"- {row['YearMonth'].strftime('%b %Y')}: {row[st.session_state.forecast_col]:,.2f}"
+                         pdf.cell(190, 6, forecast_text, ln=True)
                 
                 pdf_path = "report.pdf"
                 pdf.output(pdf_path)
